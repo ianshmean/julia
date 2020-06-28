@@ -78,6 +78,8 @@ enum class CPU : uint32_t {
     arm_cortex_a72,
     arm_cortex_a73,
     arm_cortex_a75,
+    arm_cortex_a76,
+    arm_neoverse_n1,
 
     // Cavium
     // aarch64
@@ -93,6 +95,7 @@ enum class CPU : uint32_t {
     // aarch64
     nvidia_denver1,
     nvidia_denver2,
+    nvidia_carmel,
 
     // AppliedMicro
     // aarch64
@@ -188,6 +191,8 @@ constexpr auto arm_cortex_a57 = armv8a_crc;
 constexpr auto arm_cortex_a72 = armv8a_crc;
 constexpr auto arm_cortex_a73 = armv8a_crc;
 constexpr auto arm_cortex_a75 = armv8_2a_crypto | get_feature_masks(rcpc); // dotprod;
+constexpr auto arm_cortex_a76 = armv8_2a_crypto | get_feature_masks(rcpc); // needs validation
+constexpr auto arm_neoverse_n1 = armv8_2a_crypto | get_feature_masks(rcpc);
 constexpr auto cavium_thunderx = armv8a_crc_crypto;
 constexpr auto cavium_thunderx88 = armv8a_crc_crypto;
 constexpr auto cavium_thunderx88p1 = armv8a_crc_crypto;
@@ -197,6 +202,7 @@ constexpr auto cavium_thunderx2t99 = armv8a_crc_crypto | get_feature_masks(v8_1a
 constexpr auto cavium_thunderx2t99p1 = armv8a_crc_crypto | get_feature_masks(v8_1a);
 constexpr auto nvidia_denver1 = generic; // TODO? (crc, crypto)
 constexpr auto nvidia_denver2 = armv8a_crc_crypto;
+constexpr auto nvidia_carmel = armv8_2a_crypto; // needs validation
 constexpr auto apm_xgene1 = generic;
 constexpr auto apm_xgene2 = generic; // TODO?
 constexpr auto apm_xgene3 = generic; // TODO?
@@ -225,6 +231,8 @@ static constexpr CPUSpec<CPU, feature_sz> cpus[] = {
     {"cortex-a72", CPU::arm_cortex_a72, CPU::generic, 0, Feature::arm_cortex_a72},
     {"cortex-a73", CPU::arm_cortex_a73, CPU::generic, 0, Feature::arm_cortex_a73},
     {"cortex-a75", CPU::arm_cortex_a75, CPU::arm_cortex_a73, UINT32_MAX, Feature::arm_cortex_a75},
+    {"cortex-a76", CPU::arm_cortex_a76, CPU::arm_cortex_a73, UINT32_MAX, Feature::arm_cortex_a76}, // needs validation
+    {"neoverse-n1", CPU::arm_neoverse_n1, CPU::arm_cortex_a73, UINT32_MAX, Feature::arm_neoverse_n1}, // needs validation
     {"thunderx", CPU::cavium_thunderx, CPU::generic, 50000, Feature::cavium_thunderx},
     {"thunderxt88", CPU::cavium_thunderx88, CPU::generic, 50000, Feature::cavium_thunderx88},
     {"thunderxt88p1", CPU::cavium_thunderx88p1, CPU::cavium_thunderx88, UINT32_MAX,
@@ -237,6 +245,7 @@ static constexpr CPUSpec<CPU, feature_sz> cpus[] = {
      Feature::cavium_thunderx2t99p1},
     {"denver1", CPU::nvidia_denver1, CPU::generic, UINT32_MAX, Feature::nvidia_denver1},
     {"denver2", CPU::nvidia_denver2, CPU::generic, UINT32_MAX, Feature::nvidia_denver2},
+    {"carmel", CPU::nvidia_carmel, CPU::generic, UINT32_MAX, Feature::nvidia_carmel},
     {"xgene1", CPU::apm_xgene1, CPU::generic, UINT32_MAX, Feature::apm_xgene1},
     {"xgene2", CPU::apm_xgene2, CPU::generic, UINT32_MAX, Feature::apm_xgene2},
     {"xgene3", CPU::apm_xgene3, CPU::generic, UINT32_MAX, Feature::apm_xgene3},
@@ -381,6 +390,8 @@ constexpr auto arm_cortex_a57 = armv8a_crc;
 constexpr auto arm_cortex_a72 = armv8a_crc;
 constexpr auto arm_cortex_a73 = armv8a_crc;
 constexpr auto arm_cortex_a75 = armv8_2a_crypto;
+constexpr auto arm_cortex_a76 = armv8_2a_crypto; // needs validation
+constexpr auto arm_neoverse_n1 = armv8_2a_crypto;
 constexpr auto cavium_thunderx = armv8a_crc_crypto;
 constexpr auto cavium_thunderx88 = armv8a_crc_crypto;
 constexpr auto cavium_thunderx88p1 = armv8a_crc_crypto;
@@ -390,6 +401,7 @@ constexpr auto cavium_thunderx2t99 = armv8a_crc_crypto | get_feature_masks(v8_1a
 constexpr auto cavium_thunderx2t99p1 = armv8a_crc_crypto | get_feature_masks(v8_1a);
 constexpr auto nvidia_denver1 = armv8a; // TODO? (crc, crypto)
 constexpr auto nvidia_denver2 = armv8a_crc_crypto;
+constexpr auto nvidia_carmel = armv8_2a_crypto;
 constexpr auto apm_xgene1 = armv8a;
 constexpr auto apm_xgene2 = armv8a; // TODO?
 constexpr auto apm_xgene3 = armv8a; // TODO?
@@ -462,6 +474,8 @@ static constexpr CPUSpec<CPU, feature_sz> cpus[] = {
     {"cortex-a72", CPU::arm_cortex_a72, CPU::generic, 0, Feature::arm_cortex_a72},
     {"cortex-a73", CPU::arm_cortex_a73, CPU::generic, 0, Feature::arm_cortex_a73},
     {"cortex-a75", CPU::arm_cortex_a75, CPU::arm_cortex_a73, 60000, Feature::arm_cortex_a75},
+    {"cortex-a76", CPU::arm_cortex_a76, CPU::arm_cortex_a73, 60000, Feature::arm_cortex_a76}, // needs validation
+    {"neoverse-n1", CPU::arm_neoverse_n1, CPU::arm_cortex_a73, 60000, Feature::arm_neoverse_n1}, // needs validation
     {"thunderx", CPU::cavium_thunderx, CPU::armv8_a, UINT32_MAX, Feature::cavium_thunderx},
     {"thunderx88", CPU::cavium_thunderx88, CPU::armv8_a, UINT32_MAX, Feature::cavium_thunderx88},
     {"thunderx88p1", CPU::cavium_thunderx88p1, CPU::armv8_a, UINT32_MAX,
@@ -476,6 +490,7 @@ static constexpr CPUSpec<CPU, feature_sz> cpus[] = {
      Feature::cavium_thunderx2t99p1},
     {"denver1", CPU::nvidia_denver1, CPU::arm_cortex_a53, UINT32_MAX, Feature::nvidia_denver1},
     {"denver2", CPU::nvidia_denver2, CPU::arm_cortex_a57, UINT32_MAX, Feature::nvidia_denver2},
+    {"carmel", CPU::nvidia_carmel, CPU::arm_cortex_a57, UINT32_MAX, Feature::nvidia_carmel}, // TODO: is arm_cortex_a57 right here?
     {"xgene1", CPU::apm_xgene1, CPU::armv8_a, UINT32_MAX, Feature::apm_xgene1},
     {"xgene2", CPU::apm_xgene2, CPU::armv8_a, UINT32_MAX, Feature::apm_xgene2},
     {"xgene3", CPU::apm_xgene3, CPU::armv8_a, UINT32_MAX, Feature::apm_xgene3},
@@ -678,6 +693,8 @@ static CPU get_cpu_name(CPUID cpuid)
         case 0xd08: return CPU::arm_cortex_a72;
         case 0xd09: return CPU::arm_cortex_a73;
         case 0xd0a: return CPU::arm_cortex_a75;
+        case 0xd0b: return CPU::arm_cortex_a76;
+        case 0xd0c: return CPU::arm_neoverse_n1;
         default: return CPU::generic;
         }
     case 0x42: // Broadcom (Cavium)
@@ -701,6 +718,7 @@ static CPU get_cpu_name(CPUID cpuid)
         switch (cpuid.part) {
         case 0x000: return CPU::nvidia_denver1;
         case 0x003: return CPU::nvidia_denver2;
+        case 0x004: return CPU::nvidia_carmel; // taken from https://patchwork.kernel.org/patch/10366563/
         default: return CPU::generic;
         }
     case 0x50: // AppliedMicro
@@ -958,7 +976,10 @@ static NOINLINE std::pair<uint32_t,FeatureList<feature_sz>> _get_host_cpu()
         CPU::arm_cortex_a72,
         CPU::arm_cortex_a73,
         CPU::arm_cortex_a75,
+        CPU::arm_cortex_a76,
+        CPU::arm_neoverse_n1,
         CPU::nvidia_denver2,
+        CPU::nvidia_carmel,
         CPU::samsung_exynos_m1
     };
     shrink_big_little(list, v8order, sizeof(v8order) / sizeof(CPU));
