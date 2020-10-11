@@ -1263,13 +1263,14 @@ function create_expr_cache(pkg::PkgId, input::String, output::String, concrete_d
                        --startup-file=no --history-file=no --warn-overwrite=yes
                        --color=$(have_color === nothing ? "auto" : have_color ? "yes" : "no")
                        $trace
-                       --eval 'eval(Meta.parse(read(stdin,String)))'`, stderr=show_errors ? stderr : devnull),
+                       --eval 'tup=deserialize(stdin);eval(Meta.parse(tup[1]))'`, stderr=show_errors ? stderr : devnull),
               "w", stdout)
     # write data over stdin to avoid the (unlikely) case of exceeding max command line size
-    write(io.in, """
+    f = """
         Base.include_package_for_output($(pkg_str(pkg)), $(repr(abspath(input))), $(repr(depot_path)), $(repr(dl_load_path)),
-            $(repr(load_path)), $deps, $(repr(source_path(nothing))), $(repr(TOML_CACHE.d)))
-        """)
+            $(repr(load_path)), $deps, $(repr(source_path(nothing))))
+        """
+    serialize(io.in, tup = (f, TOML_CACHE.d))
     close(io.in)
     return io
 end
