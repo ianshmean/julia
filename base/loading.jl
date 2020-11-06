@@ -163,6 +163,15 @@ function version_slug(uuid::UUID, sha1::SHA1, p::Int=5)
     return slug(crc, p)
 end
 
+function project_precompile_slug(prefs_hash = get_preferences_hash(nothing, String[]))
+    crc = _crc32c(something(active_project(), ""))
+    crc = _crc32c(unsafe_string(JLOptions().image_file), crc)
+    crc = _crc32c(unsafe_string(JLOptions().julia_bin), crc)
+    crc = _crc32c(prefs_hash, crc)
+    return slug(crc, 5)
+end
+const project_precompile_slug_cached = Ref{String}("")
+
 mutable struct CachedTOMLDict
     path::String
     inode::UInt64
@@ -622,18 +631,29 @@ cache_file_entry(pkg::PkgId) = joinpath(
     pkg.uuid === nothing ? ""       : pkg.name),
     pkg.uuid === nothing ? pkg.name : package_slug(pkg.uuid)
 
-function find_all_in_cache_path(pkg::PkgId)
+function find_all_in_cache_path(pkg::PkgId; precomp_slug = nothing, exclude_precomp_slug = nothing, entryfilepath = cache_file_entry(pkg))
     paths = String[]
-    entrypath, entryfile = cache_file_entry(pkg)
+    entrypath, entryfile = entryfilepath
     for path in joinpath.(DEPOT_PATH, entrypath)
         isdir(path) || continue
-        for file in readdir(path, sort = false) # no sort given we sort later
-            if !((pkg.uuid === nothing && file == entryfile * ".ji") ||
-                 (pkg.uuid !== nothing && startswith(file, entryfile * "_")))
-                 continue
+        if precomp_slug === nothing
+            for file in readdir(path, sort = false) # no sort given we sort later
+                !(pkg.uuid === nothing && file == entryfile * ".ji") && continue
+                if pkg.uuid !== nothing
+                    if exclude_precomp_slug !== nothing && startswith(file, entryfile * "_" * exclude_precomp_slug)
+                        continue
+                    elseif !startswith(file, entryfile * "_")
+                        continue
+                    end
+                end
+                filepath = joinpath(path, file)
+                isfile_casesensitive(filepath) && push!(paths, filepath)
             end
-            filepath = joinpath(path, file)
-            isfile_casesensitive(filepath) && push!(paths, filepath)
+        else
+            if pkg.uuid !== nothing
+                filepath = joinpath(path, entryfile * "_" * precomp_slug * ".ji")
+                isfile_casesensitive(filepath) && push!(paths, filepath)
+            end
         end
     end
     if length(paths) > 1
@@ -726,8 +746,18 @@ end
 # returns `false` if the module isn't known to be precompilable
 # returns the set of modules restored if the cache load succeeded
 function _require_search_from_serialized(pkg::PkgId, sourcepath::String)
-    paths = find_all_in_cache_path(pkg)
-    for path_to_try in paths::Vector{String}
+    # try first the cache path for a package with this proj + julia version + no compiletime prefs
+    entryfilepath = cache_file_entry(pkg)
+    paths = find_all_in_cache_path(pkg, precomp_slug = project_precompile_slug_cached[], entryfilepath = entryfilepath)
+    if !isempty(paths)
+        ret = _require_search_from_serialized(sourcepath, paths)
+        !isa(ret, Bool) && return ret
+    end
+    paths = find_all_in_cache_path(pkg, entryfilepath = entryfilepath, exclude_precomp_slug = project_precompile_slug_cached[])
+    _require_search_from_serialized(sourcepath, paths)
+end
+function _require_search_from_serialized(sourcepath::String, paths::Vector{String})
+    for path_to_try in paths
         staledeps = stale_cachefile(sourcepath, path_to_try)
         if staledeps === true
             continue
@@ -1271,12 +1301,8 @@ function compilecache_path(pkg::PkgId, prefs_hash::UInt64)::String
     if pkg.uuid === nothing
         abspath(cachepath, entryfile) * ".ji"
     else
-        crc = _crc32c(something(Base.active_project(), ""))
-        crc = _crc32c(unsafe_string(JLOptions().image_file), crc)
-        crc = _crc32c(unsafe_string(JLOptions().julia_bin), crc)
-        crc = _crc32c(prefs_hash, crc)
-        project_precompile_slug = slug(crc, 5)
-        abspath(cachepath, string(entryfile, "_", project_precompile_slug, ".ji"))
+        project_precomp_slug = project_precompile_slug(prefs_hash)
+        abspath(cachepath, string(entryfile, "_", project_precomp_slug, ".ji"))
     end
 end
 

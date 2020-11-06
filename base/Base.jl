@@ -419,6 +419,7 @@ function __init__()
     if haskey(ENV, "JULIA_MAX_NUM_PRECOMPILE_FILES")
         MAX_NUM_PRECOMPILE_FILES[] = parse(Int, ENV["JULIA_MAX_NUM_PRECOMPILE_FILES"])
     end
+    project_precompile_slug_cached[] = project_precompile_slug()
     nothing
 end
 
