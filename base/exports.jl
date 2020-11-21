@@ -459,7 +459,9 @@ export
     occursin,
     searchsorted,
     searchsortedfirst,
+    searchsortedfirst!,
     searchsortedlast,
+    searchsortedlast!,
     insorted,
     startswith,
 
