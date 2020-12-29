@@ -258,18 +258,36 @@ end
 getpass(prompt::AbstractString) = getpass(stdin, stdout, prompt)
 
 """
-    prompt(message; default="") -> Union{String, Nothing}
+    prompt(message; default="", timeout=nothing) -> Union{String, Nothing}
 
 Displays the `message` then waits for user input. Input is terminated when a newline (\\n)
 is encountered or EOF (^D) character is entered on a blank line. If a `default` is provided
-then the user can enter just a newline character to select the `default`.
+then the user can enter just a newline character to select the `default`. A `timeout` in seconds
+greater than 0 can be provided, after which the default will be returned.
 
 See also `Base.getpass` and `Base.winprompt` for secure entry of passwords.
 """
-function prompt(input::IO, output::IO, message::AbstractString; default::AbstractString="")
-    msg = !isempty(default) ? "$message [$default]: " : "$message: "
+function prompt(input::IO, output::IO, message::AbstractString; default::AbstractString="", timeout::Union{Nothing, Int} = nothing)
+    if !isnothing(timeout)
+        @assert timeout > 0 "Timeout must be greater than 0 seconds"
+        msg = !isempty(default) ? "$message [$default] timeout $timeout seconds: " : "$message: "
+        tr = Timer(timeout)
+    else
+        msg = !isempty(default) ? "$message [$default]: " : "$message: "
+    end
     print(output, msg)
-    uinput = readline(input, keep=true)
+    t = @async readline(input, keep=true)
+    while !istaskdone(t) && (!isnothing(timeout) && isopen(tr))
+        sleep(0.1)
+    end
+    if !isnothing(timeout) && !istaskdone(t)
+        try
+            Base.throwto(t, InterruptException())
+        catch
+        end
+        return default
+    end
+    uinput = fetch(t)
     isempty(uinput) && return nothing  # Encountered an EOF
     uinput = chomp(uinput)
     isempty(uinput) ? default : uinput
@@ -277,7 +295,7 @@ end
 
 # allow new prompt methods to be defined if stdin has been
 # redirected to some custom stream, e.g. in IJulia.
-prompt(message::AbstractString; default::AbstractString="") = prompt(stdin, stdout, message, default=default)
+prompt(message::AbstractString; default::AbstractString="",timeout::Union{Nothing, Int} = nothing) = prompt(stdin, stdout, message, default=default, timeout=timeout)
 
 # Windows authentication prompt
 if Sys.iswindows()
