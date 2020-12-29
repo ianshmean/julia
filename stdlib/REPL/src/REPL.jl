@@ -334,26 +334,6 @@ end
 outstream(r::BasicREPL) = r.terminal
 hascolor(r::BasicREPL) = hascolor(r.terminal)
 
-function try_pkg_add(mod::Symbol)
-    resp = try
-        Base.prompt(" \033[32m\033[1m└\033[22m\033[0m Package $(repr(String(mod))) not found, with active project $(repr(Base.active_project()))
-   Try adding $(repr(String(mod))) to the active environment? (y/n)",
-        default = "n")
-    catch err
-        if err isa InterruptException
-            println()
-            return false
-        end
-    end
-    if lowercase(resp) in ["y", "yes"]
-        let Pkg = Base.require(Base.PkgId(Base.UUID((0x44cfe95a_1eb2_52ea,0xb672_e2afdf69b78f)), "Pkg"))
-            Pkg.add(string(mod))
-            return true
-        end
-    end
-    return false
-end
-
 function run_frontend(repl::BasicREPL, backend::REPLBackendRef)
     d = REPLDisplay(repl)
     dopushdisplay = !in(d,Base.Multimedia.displays)
@@ -794,13 +774,24 @@ find_hist_file() = get(ENV, "JULIA_HISTORY",
 
 backend(r::AbstractREPL) = r.backendref
 
+# Allows an external package to add hooks into the code loading
+# return true if installed, false if not
+# to e.g. install packages on demand
+const install_package_hooks = Any[]
+
 function eval_with_backend(ast, backend::REPLBackendRef)
     put!(backend.repl_channel, (ast, 1))
     resp = take!(backend.response_channel) # (val, iserr)
     if last(resp)
         err = first(first(first(resp)))
         if err isa ModuleNotFoundError
-            try_pkg_add(err.mod) && return Pair{Any, Bool}(nothing, false)
+            for f in install_package_hooks
+                if f(err.mod)
+                    put!(backend.repl_channel, (ast, 1))
+                    resp = take!(backend.response_channel) # (val, iserr)
+                    break
+                end
+            end
         end
     end
     return resp
