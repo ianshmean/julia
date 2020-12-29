@@ -152,6 +152,13 @@ showerror(io::IO, ex::KeyError) = (print(io, "KeyError: key ");
                                    print(io, " not found"))
 showerror(io::IO, ex::InterruptException) = print(io, "InterruptException:")
 showerror(io::IO, ex::ArgumentError) = print(io, "ArgumentError: ", ex.msg)
+
+function showerror(io::IO, ex::ModuleNotFoundError)
+    print(io, """ModuleNotFoundError: Package $(ex.mod) not found in current path:
+    - Run `import Pkg; Pkg.add($(repr(String(ex.mod))))` to install the $mod package.
+    """)
+end
+
 showerror(io::IO, ex::AssertionError) = print(io, "AssertionError: ", ex.msg)
 showerror(io::IO, ex::OverflowError) = print(io, "OverflowError: ", ex.msg)
 

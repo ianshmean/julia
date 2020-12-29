@@ -186,7 +186,7 @@ export
     ErrorException, BoundsError, DivideError, DomainError, Exception,
     InterruptException, InexactError, OutOfMemoryError, ReadOnlyMemoryError,
     OverflowError, StackOverflowError, SegmentationFault, UndefRefError, UndefVarError,
-    TypeError, ArgumentError, MethodError, AssertionError, LoadError, InitError,
+    TypeError, ArgumentError, ModuleNotFoundError, MethodError, AssertionError, LoadError, InitError,
     UndefKeywordError,
     # AST representation
     Expr, QuoteNode, LineNumberNode, GlobalRef,
@@ -324,6 +324,9 @@ end
 
 struct ArgumentError <: Exception
     msg::AbstractString
+end
+struct ModuleNotFoundError <: Exception
+    mod::Symbol
 end
 struct UndefKeywordError <: Exception
     var::Symbol
