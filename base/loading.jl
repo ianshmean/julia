@@ -651,7 +651,11 @@ end
 # or an Exception that describes why it couldn't be loaded
 # and it reconnects the Base.Docs.META
 function _include_from_serialized(path::String, depmods::Vector{Any})
-    sv = ccall(:jl_restore_incremental, Any, (Cstring, Any), path, depmods)
+    !isfile(path) && error("Cache file \"$path\" not found.")
+    sv = open(path) do f
+        buf = read(f)
+        ccall(:jl_restore_incremental_from_buf, Any, (Ptr{UInt8}, Csize_t, Any), buf, sizeof(buf), depmods)
+    end
     if isa(sv, Exception)
         return sv
     end
