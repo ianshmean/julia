@@ -60,18 +60,19 @@ end
 function default_metafmt(level::LogLevel, _module, group, id, file, line)
     @nospecialize
     color = default_logcolor(level)
-    prefix = (level == Warn ? "Warning" : string(level))*':'
-    suffix = ""
-    Info <= level < Warn && return color, prefix, suffix
-    _module !== nothing && (suffix *= "$(_module)")
-    if file !== nothing
-        _module !== nothing && (suffix *= " ")
-        suffix *= Base.contractuser(file)
-        if line !== nothing
-            suffix *= ":$(isa(line, UnitRange) ? "$(first(line))-$(last(line))" : line)"
+    prefix = string(level == Warn ? "Warning" : string(level), ':')
+    Info <= level < Warn && return color, prefix, ""
+    suffix = sprint() do iostr
+        _module !== nothing && (print(iostr, "$(_module)"))
+        if file !== nothing
+            _module !== nothing && (print(iostr, " "))
+            print(iostr, Base.contractuser(file))
+            if line !== nothing
+                print(iostr, ":$(isa(line, UnitRange) ? "$(first(line))-$(last(line))" : line)")
+            end
         end
     end
-    !isempty(suffix) && (suffix = "@ " * suffix)
+    !isempty(suffix) && (suffix = string("@ ", suffix))
     return color, prefix, suffix
 end
 
