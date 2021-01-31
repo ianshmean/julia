@@ -57,7 +57,24 @@ StatStruct(buf::Union{Vector{UInt8},Ptr{UInt8}}) = StatStruct(
     ccall(:jl_stat_ctime,   Float64, (Ptr{UInt8},), buf),
 )
 
-show(io::IO, st::StatStruct) = print(io, "StatStruct(mode=0o$(string(filemode(st), base = 8, pad = 6)), size=$(filesize(st)))")
+function show(io::IO, st::StatStruct)
+    str = sprint() do iob
+        println(iob, "StatStruct")
+        println(iob, "   size: $(st.size)")
+        println(iob, " device: $(st.device)")
+        println(iob, "  inode: $(st.inode)")
+        println(iob, "   mode: 0o$(string(filemode(st), base = 8, pad = 6))")
+        println(iob, "  nlink: $(st.nlink)")
+        println(iob, "    uid: $(st.uid)")
+        println(iob, "    gid: $(st.gid)")
+        println(iob, "   rdev: $(st.rdev)")
+        println(iob, "blksize: $(st.blksize)")
+        println(iob, " blocks: $(st.blocks)")
+        println(iob, "  mtime: $(st.mtime)")
+        println(iob, "  ctime: $(st.ctime)")
+    end
+    print(io, str)
+end
 
 # stat & lstat functions
 
