@@ -58,6 +58,20 @@ StatStruct(buf::Union{Vector{UInt8},Ptr{UInt8}}) = StatStruct(
 )
 
 function show(io::IO, st::StatStruct)
+    function iso_datetime_with_relative(t, tnow)
+        sprint() do iob2
+            print(iob2, Libc.strftime("%FT%R%z", t))
+            secdiff = t - tnow
+            for (d, name) in ((24*60*60,"day"),(60*60,"hour"),(60,"minute"),(1,"second"))
+                tdiff = round(Int, div(abs(secdiff), d))
+                (tdiff == 0 && name != "second") && continue # find first unit difference
+                plural = tdiff == 1 ? "" : "s"
+                when = secdiff < 0 ? "ago" : "in the future"
+                print(iob2, " ($(tdiff) $(name)$(plural) $(when))")
+                break
+            end
+        end
+    end
     str = sprint() do iob
         println(iob, "StatStruct")
         println(iob, "   size: $(st.size)")
@@ -70,8 +84,9 @@ function show(io::IO, st::StatStruct)
         println(iob, "   rdev: $(st.rdev)")
         println(iob, "blksize: $(st.blksize)")
         println(iob, " blocks: $(st.blocks)")
-        println(iob, "  mtime: $(st.mtime)")
-        println(iob, "  ctime: $(st.ctime)")
+        tnow = Libc.TimeVal().sec
+        println(iob, "  mtime: $(iso_datetime_with_relative(st.mtime, tnow))")
+        println(iob, "  ctime: $(iso_datetime_with_relative(st.ctime, tnow))")
     end
     print(io, str)
 end
