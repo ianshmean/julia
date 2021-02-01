@@ -676,7 +676,7 @@ let
     @test a_stat.size == b_stat.size
     @test a_stat.size == c_stat.size
 
-    @test parse(Int, match(r"mode=(.*),", sprint(show, a_stat)).captures[1]) == a_stat.mode
+    @test parse(Int, match(r"mode: (.*),", sprint(show, a_stat)).captures[1]) == a_stat.mode
 
     close(af)
     rm(afile)
