@@ -60,7 +60,7 @@ StatStruct(buf::Union{Vector{UInt8},Ptr{UInt8}}) = StatStruct(
 function show(io::IO, st::StatStruct)
     function iso_datetime_with_relative(t, tnow)
         sprint() do iob2
-            print(iob2, Libc.strftime("%FT%R%z", t))
+            print(iob2, Libc.strftime("%FT%T%z", t))
             secdiff = t - tnow
             for (d, name) in ((24*60*60,"day"),(60*60,"hour"),(60,"minute"),(1,"second"))
                 tdiff = round(Int, div(abs(secdiff), d))
