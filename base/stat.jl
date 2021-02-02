@@ -65,6 +65,10 @@ function show(io::IO, st::StatStruct)
             for (d, name) in ((24*60*60,"day"),(60*60,"hour"),(60,"minute"),(1,"second"))
                 tdiff = round(Int, div(abs(secdiff), d))
                 (tdiff == 0 && name != "second") && continue # find first unit difference
+                if tdiff == 0 && name == "second"
+                    print(iob2, " (just now)")
+                    break
+                end
                 plural = tdiff == 1 ? "" : "s"
                 when = secdiff < 0 ? "ago" : "in the future"
                 print(iob2, " ($(tdiff) $(name)$(plural) $(when))")
