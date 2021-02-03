@@ -26,6 +26,7 @@ export
     uperm
 
 struct StatStruct
+    desc    :: Union{AbstractString, OS_HANDLE}
     device  :: UInt
     inode   :: UInt
     mode    :: UInt
@@ -40,9 +41,10 @@ struct StatStruct
     ctime   :: Float64
 end
 
-StatStruct() = StatStruct(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+StatStruct() = StatStruct("", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-StatStruct(buf::Union{Vector{UInt8},Ptr{UInt8}}) = StatStruct(
+StatStruct(desc::Union{AbstractString, OS_HANDLE}, buf::Union{Vector{UInt8},Ptr{UInt8}}) = StatStruct(
+    desc,
     ccall(:jl_stat_dev,     UInt32,  (Ptr{UInt8},), buf),
     ccall(:jl_stat_ino,     UInt32,  (Ptr{UInt8},), buf),
     ccall(:jl_stat_mode,    UInt32,  (Ptr{UInt8},), buf),
@@ -77,11 +79,11 @@ function show(io::IO, st::StatStruct)
         end
     end
     str = sprint() do iob
-        println(iob, "StatStruct")
+        println(iob, "StatStruct for $(st.desc)")
         println(iob, "   size: $(st.size)")
         println(iob, " device: $(st.device)")
         println(iob, "  inode: $(st.inode)")
-        println(iob, "   mode: 0o$(string(filemode(st), base = 8, pad = 6))")
+        println(iob, "   mode: 0o$(string(filemode(st), base = 8, pad = 6)) ($(filemode_string(st)))")
         println(iob, "  nlink: $(st.nlink)")
         println(iob, "    uid: $(st.uid)")
         println(iob, "    gid: $(st.gid)")
@@ -104,7 +106,7 @@ macro stat_call(sym, arg1type, arg)
         if !(r in (0, Base.UV_ENOENT, Base.UV_ENOTDIR, Base.UV_EINVAL))
             uv_error(string("stat(",repr($(esc(arg))),")"), r)
         end
-        st = StatStruct(stat_buf)
+        st = StatStruct($(esc(arg)), stat_buf)
         if ispath(st) != (r == 0)
             error("stat returned zero type for a valid path")
         end
@@ -128,6 +130,7 @@ The fields of the structure are:
 
 | Name    | Description                                                        |
 |:--------|:-------------------------------------------------------------------|
+| desc    | The path or OS file descriptor                                     |
 | size    | The size (in bytes) of the file                                    |
 | device  | ID of the device that contains the file                            |
 | inode   | The inode number of the file                                       |
@@ -162,6 +165,50 @@ lstat(path...) = lstat(joinpath(path...))
 Equivalent to `stat(file).mode`.
 """
 filemode(st::StatStruct) = st.mode
+
+function filemode_string(st::StatStruct)
+    filemode_table = (
+        ((S_IFLNK,        "l"),
+        (S_IFSOCK,        "s"),  # Must appear before IFREG and IFDIR as IFSOCK == IFREG | IFDIR
+        (S_IFREG,         "-"),
+        (S_IFBLK,         "b"),
+        (S_IFDIR,         "d"),
+        (S_IFCHR,         "c"),
+        (S_IFIFO,         "p")),
+
+        ((S_IRUSR,         "r"),),
+        ((S_IWUSR,         "w"),),
+        ((S_IXUSR|S_ISUID, "s"),
+        (S_ISUID,          "S"),
+        (S_IXUSR,          "x")),
+
+        ((S_IRGRP,         "r"),),
+        ((S_IWGRP,         "w"),),
+        ((S_IXGRP|S_ISGID, "s"),
+        (S_ISGID,          "S"),
+        (S_IXGRP,          "x")),
+
+        ((S_IROTH,         "r"),),
+        ((S_IWOTH,         "w"),),
+        ((S_IXOTH|S_ISVTX, "t"),
+        (S_ISVTX,          "T"),
+        (S_IXOTH,          "x"))
+    )
+    str = sprint() do iob
+        for table in filemode_table
+            complete = true
+            for (bit, char) in table
+                if st.mode & bit == bit
+                    print(iob, char)
+                    complete = false
+                    break
+                end
+            end
+            complete && print(iob, "-")
+        end
+    end
+    return str
+end
 
 """
     filesize(path...)
