@@ -601,3 +601,39 @@ function runtests(tests = ["all"]; ncores::Int = ceil(Int, Sys.CPU_THREADS::Int 
               "including error messages above and the output of versioninfo():\n$(read(buf, String))")
     end
 end
+
+# stat.jl helpers which require methods that are loaded later
+
+function getusername(uid::Union{UInt32, UInt64})
+    if Sys.islinux()
+        name = strip(read(pipeline(`getent passwd "$(Int(uid))"`,`cut -d: -f1`), String))
+        isempty(name) && return
+        return name
+    elseif Sys.isapple()
+        lines = read(`dscl . -list /Users UniqueID`, String)
+        isempty(lines) && return
+        lines  = split(lines, "\n")
+        for line in lines
+            parts = split(line, " ", keepempty=false)
+            tryparse(Int, last(parts)) == Int(uid) && return first(parts)
+        end
+    end
+    nothing
+end
+
+function getgroupname(gid::Union{UInt32, UInt64})
+    if Sys.islinux()
+        name = strip(read(pipeline(`getent group "$(Int(gid))"`,`cut -d: -f1`), String))
+        isempty(name) && return
+        return name
+    elseif Sys.isapple()
+        lines = read(`dscl . -list /groups PrimaryGroupID`, String)
+        isempty(lines) && return
+        lines  = split(lines, "\n")
+        for line in lines
+            parts = split(line, " ", keepempty=false)
+            tryparse(Int, last(parts)) == gid && return first(parts)
+        end
+    end
+    nothing
+end

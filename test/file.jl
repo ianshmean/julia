@@ -1556,3 +1556,23 @@ if Sys.iswindows()
     @test rm(tmp) === nothing
 end
 end
+
+@testset "StatStruct show's extended details" begin
+    f, io = mktemp()
+    s = stat(f)
+    stat_show_str = sprint(show, s)
+    @test occursin(f, stat_show_str)
+    @test occursin("mode: 0o100600 (-rw-------)", stat_show_str)
+    if Sys.iswindows() == false
+        @test !isnothing(Base.getusername(s.uid))
+        @test !isnothing(Base.getgroupname(s.gid))
+    end
+    d = mkdir()
+    stat_show_str = sprint(show, d)
+    @test occursin(d, stat_show_str)
+    @test occursin("mode: 0o040700 (drwx------)", stat_show_str)
+    if Sys.iswindows() == false
+        @test !isnothing(Base.getusername(s.uid))
+        @test !isnothing(Base.getgroupname(s.gid))
+    end
+end
