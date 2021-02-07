@@ -167,8 +167,8 @@ lstat(path...) = lstat(joinpath(path...))
 Equivalent to `stat(file).mode`.
 """
 filemode(st::StatStruct) = st.mode
-
-function filemode_string(st::StatStruct)
+filemode_string(st::StatStruct) = filemode_string(st.mode)
+function filemode_string(mode)
     filemode_table = (
         ((S_IFLNK,        "l"),
         (S_IFSOCK,        "s"),  # Must appear before IFREG and IFDIR as IFSOCK == IFREG | IFDIR
@@ -200,7 +200,7 @@ function filemode_string(st::StatStruct)
         for table in filemode_table
             complete = true
             for (bit, char) in table
-                if st.mode & bit == bit
+                if mode & bit == bit
                     print(iob, char)
                     complete = false
                     break
