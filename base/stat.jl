@@ -60,6 +60,7 @@ StatStruct(desc::Union{AbstractString, OS_HANDLE}, buf::Union{Vector{UInt8},Ptr{
 )
 
 function show(io::IO, st::StatStruct)
+    compact = get(io, :compact, true)
     function iso_datetime_with_relative(t, tnow)
         sprint() do iob2
             print(iob2, Libc.strftime("%FT%T%z", t))
@@ -78,23 +79,44 @@ function show(io::IO, st::StatStruct)
             end
         end
     end
-    str = sprint() do iob
-        println(iob, "StatStruct for $(st.desc)")
-        println(iob, "   size: $(st.size)")
-        println(iob, " device: $(st.device)")
-        println(iob, "  inode: $(st.inode)")
-        println(iob, "   mode: 0o$(string(filemode(st), base = 8, pad = 6)) ($(filemode_string(st)))")
-        println(iob, "  nlink: $(st.nlink)")
-        username = Base.getusername(st.uid)
-        isnothing(username) ? println(iob, "    uid: $(st.uid)") : println(iob, "    uid: $(st.uid) ($username)")
-        groupname = Base.getgroupname(st.gid)
-        isnothing(groupname) ? println(iob, "    gid: $(st.gid)") : println(iob, "    gid: $(st.gid) ($groupname)")
-        println(iob, "   rdev: $(st.rdev)")
-        println(iob, "blksize: $(st.blksize)")
-        println(iob, " blocks: $(st.blocks)")
-        tnow = Libc.TimeVal().sec
-        println(iob, "  mtime: $(iso_datetime_with_relative(st.mtime, tnow))")
-        println(iob, "  ctime: $(iso_datetime_with_relative(st.ctime, tnow))")
+    str = if compact
+        sprint() do iob
+            print(iob, "`$(st.desc)`")
+            print(iob, " size: $(st.size) bytes")
+            print(iob, " device: $(st.device)")
+            print(iob, " inode: $(st.inode)")
+            print(iob, " mode: 0o$(string(filemode(st), base = 8, pad = 6)) ($(filemode_string(st)))")
+            print(iob, " nlink: $(st.nlink)")
+            username = Base.getusername(st.uid)
+            isnothing(username) ? print(iob, " uid: $(st.uid)") : print(iob, " uid: $(st.uid) ($username)")
+            groupname = Base.getgroupname(st.gid)
+            isnothing(groupname) ? print(iob, " gid: $(st.gid)") : print(iob, " gid: $(st.gid) ($groupname)")
+            print(iob, " rdev: $(st.rdev)")
+            print(iob, " blksize: $(st.blksize)")
+            print(iob, " blocks: $(st.blocks)")
+            tnow = Libc.TimeVal().sec
+            print(iob, " mtime: $(iso_datetime_with_relative(st.mtime, tnow))")
+            println(iob, " ctime: $(iso_datetime_with_relative(st.ctime, tnow))")
+        end
+    else
+        sprint() do iob
+            println(iob, "StatStruct for `$(st.desc)`")
+            println(iob, "   size: $(st.size) bytes")
+            println(iob, " device: $(st.device)")
+            println(iob, "  inode: $(st.inode)")
+            println(iob, "   mode: 0o$(string(filemode(st), base = 8, pad = 6)) ($(filemode_string(st)))")
+            println(iob, "  nlink: $(st.nlink)")
+            username = Base.getusername(st.uid)
+            isnothing(username) ? println(iob, "    uid: $(st.uid)") : println(iob, "    uid: $(st.uid) ($username)")
+            groupname = Base.getgroupname(st.gid)
+            isnothing(groupname) ? println(iob, "    gid: $(st.gid)") : println(iob, "    gid: $(st.gid) ($groupname)")
+            println(iob, "   rdev: $(st.rdev)")
+            println(iob, "blksize: $(st.blksize)")
+            println(iob, " blocks: $(st.blocks)")
+            tnow = Libc.TimeVal().sec
+            println(iob, "  mtime: $(iso_datetime_with_relative(st.mtime, tnow))")
+            println(iob, "  ctime: $(iso_datetime_with_relative(st.ctime, tnow))")
+        end
     end
     print(io, str)
 end
