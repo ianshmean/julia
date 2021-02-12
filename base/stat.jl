@@ -81,7 +81,7 @@ function show(io::IO, st::StatStruct)
     end
     str = if compact
         sprint() do iob
-            print(iob, "`$(st.desc)`")
+            print(iob, "$(st.desc)")
             print(iob, " size: $(st.size) bytes")
             print(iob, " device: $(st.device)")
             print(iob, " inode: $(st.inode)")
@@ -100,7 +100,7 @@ function show(io::IO, st::StatStruct)
         end
     else
         sprint() do iob
-            println(iob, "StatStruct for `$(st.desc)`")
+            println(iob, "StatStruct for $(st.desc)")
             println(iob, "   size: $(st.size) bytes")
             println(iob, " device: $(st.device)")
             println(iob, "  inode: $(st.inode)")
